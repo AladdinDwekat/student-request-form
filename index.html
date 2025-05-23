@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>نموذج الطلبات</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-100 p-4">
+  <div id="root" class="max-w-4xl mx-auto"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function App() {
+      const [formData, setFormData] = useState({ name: "", id: "", type: "Academic", details: "" });
+      const [requests, setRequests] = useState([]);
+
+      const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+      };
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        fetch("https://script.google.com/macros/s/AKfycbziPgaDjTD-qAEjChkKEVjae-vR6rbbKpjpqwv6-HUiPqrgFRCvHbayReUM4EsrxPPYJg/exec", {
+          method: "POST",
+          body: JSON.stringify(formData),
+        })
+        .then(res => res.text())
+        .then(() => {
+          alert("تم إرسال الطلب");
+          setRequests([...requests, { ...formData, timestamp: new Date().toLocaleString() }]);
+          setFormData({ name: "", id: "", type: "Academic", details: "" });
+        });
+      };
+
+      const exportToExcel = () => {
+        const ws = XLSX.utils.json_to_sheet(requests);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Requests");
+        XLSX.writeFile(wb, "requests.xlsx");
+      };
+
+      const handlePrint = () => {
+        window.print();
+      };
+
+      return (
+        <div className="bg-white shadow rounded-lg p-6">
+          <h1 className="text-2xl font-bold mb-4">نموذج تقديم الطلبات</h1>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input name="name" value={formData.name} onChange={handleChange} placeholder="الاسم" className="w-full border rounded p-2" required />
+            <input name="id" value={formData.id} onChange={handleChange} placeholder="الرقم الجامعي" className="w-full border rounded p-2" required />
+            <select name="type" value={formData.type} onChange={handleChange} className="w-full border rounded p-2">
+              <option>Academic</option>
+              <option>Financial</option>
+              <option>Administrative</option>
+            </select>
+            <textarea name="details" value={formData.details} onChange={handleChange} placeholder="تفاصيل الطلب" className="w-full border rounded p-2" required></textarea>
+            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">إرسال</button>
+          </form>
+
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold mb-2">لوحة الطلبات</h2>
+            <div className="flex gap-2 mb-4">
+              <button onClick={exportToExcel} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">تصدير Excel</button>
+              <button onClick={handlePrint} className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">طباعة</button>
+            </div>
+            <table className="w-full border">
+              <thead>
+                <tr className="bg-gray-200">
+                  <th className="p-2 border">الاسم</th>
+                  <th className="p-2 border">الرقم</th>
+                  <th className="p-2 border">نوع الطلب</th>
+                  <th className="p-2 border">تفاصيل</th>
+                  <th className="p-2 border">التاريخ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {requests.map((r, idx) => (
+                  <tr key={idx} className="text-sm">
+                    <td className="p-2 border">{r.name}</td>
+                    <td className="p-2 border">{r.id}</td>
+                    <td className="p-2 border">{r.type}</td>
+                    <td className="p-2 border">{r.details}</td>
+                    <td className="p-2 border">{r.timestamp}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    const container = document.getElementById('root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<App />);
+  </script>
+</body>
+</html>
